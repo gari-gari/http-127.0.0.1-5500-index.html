@@ -2,7 +2,7 @@
 const SECRET_WORD = "2026"; 
 
 // 🔗 【重要】Google Apps Scriptで発行されたウェブアプリURLをここに貼り付けてください
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzdgReYRx2JwTN3atFbcqRsd-obG9QZFQ7hFMjEjVQ7lCWBjUhDwkTbdpVaqFvCa7Ut/exec"; 
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxHNG2oVb8d5ObKf2gnl-o8vEceNaWJSSMJeaMlUPQhY_I5UcTqKHXUFXFMiqEjvrMm/exec"; 
 
 function checkPassword() {
     const input = document.getElementById('password-input').value;
@@ -43,6 +43,7 @@ const netaMaster = [
     "中トロ", "ズワイガニ", "うなぎ"
 ];
 
+// 💡 必要に応じて、ネギトロや中トロなどの1パックあたりの容量（枚数やグラム数）もここに追加してください
 const packSizeMaster = {
     "マグロ": 10, "赤エビ": 10, "ヤリイカ": 20, "ボイルエビ": 20, "焼きサーモン": 20,
     "アナゴ": 20, "ツブ": 20, "生エビ": 20, "ヒラメ": 20, "カレイ": 20,
@@ -75,16 +76,16 @@ async function loadStockFromSpreadsheet() {
         alert("🚨 スプレッドシートからの在庫同期に失敗しました。オフラインモード（初期値100）で起動します。\n理由: " + error.message);
     }
 }
-// --- スプレッドシートへ最新在庫を保存する関数（修正版） ---
+
+// --- スプレッドシートへ最新在庫を保存する関数 ---
 async function saveStockToSpreadsheet() {
     try {
-        // Google GASに確実にデータを届けるため、テキスト形式でラップして送信します
         const response = await fetch(GAS_API_URL, {
             method: "POST",
-            /* mode: "no-cors" は削除するか、指定せずブラウザに任せます */
             headers: { "Content-Type": "text/plain" }, 
             body: JSON.stringify(stockMaster)
         });
+        if (!response.ok) throw new Error('保存通信エラー');
         console.log("スプレッドシートへ在庫データを送信しました");
     } catch (error) {
         alert("🚨 スプレッドシートへのデータ保存に失敗しました。画面上の数値のみ更新されています。");
@@ -188,17 +189,25 @@ function applyPrepToStock() {
     for (let name in lastCalculatedTotals) {
         if (lastCalculatedTotals[name] > 0) {
             stockMaster[name] = Math.round((stockMaster[name] - lastCalculatedTotals[name]) * 1000) / 1000;
+            // 💡 マイナス在庫を防止したい場合は以下のコメントアウトを解除してください
+            // if (stockMaster[name] < 0) stockMaster[name] = 0;
             appliedCount++;
         }
     }
     if (appliedCount > 0) {
         saveStockToSpreadsheet(); 
+        
+        // 🛠️【修正バグ】UI側の表示もリアルタイムで最新パック数に更新する
+        if (document.getElementById('content-stock').classList.contains('hidden') === false) {
+            renderStockFields(); 
+        }
+        
         alert('仕込み分のネタ数を現在の在庫から引き算し、スプレッドシートを更新しました！\n「在庫管理」タブから確認できます。');
         resetForm();
     }
 }
 
-// 🛠️【大幅修正】在庫数の表示を「端数なしの完全パック表記」のみに絞り込む関数
+// 🛠️ 在庫数の表示を「端数なしの完全パック表記」のみに絞り込む関数
 function getStockDisplayText(name, totalQty) {
     if (!packSizeMaster[name] || packSizeMaster[name] === 1) {
         // パック容量の設定がない、または1枚/1パック（玉子やキュウリなど）はそのまま整数（バラ）で表示
@@ -216,7 +225,7 @@ function getStockDisplayText(name, totalQty) {
     }
 }
 
-// 在庫管理画面の項目を自動生成・描写する機能（表示テキスト部分を修正）
+// 在庫管理画面の項目を自動生成・描写する機能
 function renderStockFields() {
     const stockFields = document.getElementById('stock-fields');
     stockFields.innerHTML = ''; 
@@ -249,7 +258,7 @@ function renderStockFields() {
     });
 }
 
-// 個別の在庫を足し算・引き算する機能（※入力エリアは「パック数」で計算するように進化）
+// 個別の在庫を足し算・引き算する機能（※入力エリアは「パック数」で計算）
 function updateSingleStock(netaName, index) {
     const plusInput = parseFloat(document.getElementById(`stock-plus-${index}`).value) || 0;
     const minusInput = parseFloat(document.getElementById(`stock-minus-${index}`).value) || 0;
@@ -262,7 +271,7 @@ function updateSingleStock(netaName, index) {
     // 1パックあたりの容量を取得（設定がなければ1枚換算）
     const size = packSizeMaster[netaName] || 1;
 
-    // バイト仲間が直感的に打てるよう、入力数値を「パック数 × 1Pの枚数」に内部で自動変換して計算
+    // 入力数値を「パック数 × 1Pの枚数」に内部で自動変換して計算
     const plusQty = plusInput * size;
     const minusQty = minusInput * size;
 
