@@ -2,7 +2,7 @@
 const SECRET_WORD = "2026"; 
 
 // 🔗 【重要】Google Apps Scriptで発行されたウェブアプリURLをここに貼り付けてください
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxLRVOBrlnZgjrtYoKaRst8l1z0LVCPJKKDxiYBZBJxjKxKcp01af3xKXd3e4y5_gLk/exec"; 
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyNSJ234EtFiki8iLvYLityzhOiP_XfIipOijHp66cIVh1tpZB38gJVDD9iRlho4262/exec"; 
 
 function checkPassword() {
     const input = document.getElementById('password-input').value;
