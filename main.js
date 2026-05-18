@@ -1,12 +1,16 @@
 // --- 認証システム ---
 const SECRET_WORD = "2026"; 
 
+// 🔗 【重要】Google Apps Scriptで発行されたウェブアプリURLをここに貼り付けてください
+const GAS_API_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
+
 function checkPassword() {
     const input = document.getElementById('password-input').value;
     const error = document.getElementById('auth-error');
     if (input === SECRET_WORD) {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
+        loadStockFromSpreadsheet(); // 認証成功時にスプレッドシートから在庫を読み込む
     } else {
         error.textContent = "合言葉が違います。";
     }
@@ -36,7 +40,7 @@ const netaMaster = [
     "北寄貝サラダ", "ノーカットたまご", "18カットたまご", "28カットたまご", "キュウリ", 
     "ヒラメ", "カレイ", "エンガワ", "ホタテ", "コウイカ", 
     "赤いか", "トラウトサーモン", "イカそうめん",
-    "中トロ", "ズワイガニ" // 【新規ネタ追加】
+    "中トロ", "ズワイガニ", "うなぎ"
 ];
 
 const packSizeMaster = {
@@ -44,15 +48,48 @@ const packSizeMaster = {
     "アナゴ": 20, "ツブ": 20, "生エビ": 20, "ヒラメ": 20, "カレイ": 20,
     "ホタテ": 20, "コウイカ": 20, "赤いか": 20, "トラウトサーモン": 20, "エンガワ": 20,
     "ウニ": 12, "18カットたまご": 1, "28カットたまご": 1, "ノーカットたまご": 1, "キュウリ": 1,
-    "いくら": 120, "いたや貝": 25
-    // ※「中トロ」「ズワイガニ」のパックサイズを指定する場合はここに追記してください。無い場合は自動で「バラ管理」になります。
+    "いくら": 120, "いたや貝": 25, "ズワイガニ": 20, "うなぎ": 20
 };
 
-// 在庫データマニュアル（初期状態はすべて100個としてスタートします）
+// 在庫データ（初期値は100ですが、スプレッドシートの通信が成功すると上書きされます）
 let stockMaster = {};
 netaMaster.forEach(neta => {
     stockMaster[neta] = 100; 
 });
+
+// --- 【新規】スプレッドシートから在庫を取得する関数 ---
+async function loadStockFromSpreadsheet() {
+    try {
+        const response = await fetch(GAS_API_URL);
+        if (!response.ok) throw new Error('通信エラーが発生しました');
+        const remoteStock = await response.json();
+        
+        // 取得したデータで在庫を更新
+        for (let neta in remoteStock) {
+            if (stockMaster.hasOwnProperty(neta)) {
+                stockMaster[neta] = remoteStock[neta];
+            }
+        }
+        console.log("スプレッドシートから最新在庫を同期しました", stockMaster);
+    } catch (error) {
+        alert("🚨 スプレッドシートからの在庫同期に失敗しました。オフラインモード（初期値100）で起動します。\n理由: " + error.message);
+    }
+}
+
+// --- 【新規】スプレッドシートへ最新在庫を保存する関数 ---
+async function saveStockToSpreadsheet() {
+    try {
+        const response = await fetch(GAS_API_URL, {
+            method: "POST",
+            mode: "no-cors", // GASの仕様に合わせたクロスドメイン対策
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stockMaster)
+        });
+        console.log("スプレッドシートへ在庫データを送信しました");
+    } catch (error) {
+        alert("🚨 スプレッドシートへのデータ保存に失敗しました。画面上の数値のみ更新されています。");
+    }
+}
 
 // --- レシピデータ ---
 const recipeData = [
@@ -75,12 +112,17 @@ const recipeData = [
     { id: 'half_pound_maki', name: '2分の1ポンド海鮮巻き', ratio: { "ノーカットたまご": 1 / 16, "キュウリ": 1 / 8 } },
     { id: 'kanikama_maki', name: 'かにかま玉子巻き', ratio: { "ノーカットたまご": 1 / 4 } },
     { id: 'salmon_salad_maki', name: 'サーモンサラダ巻き', ratio: { "キュウリ": 1 / 8, "18カットたまご": 1 / 18 } },
-    
-    // --- 【ここから新規追加メニュー】 ---
     { id: 'otoku_lunch', name: 'お得ランチ寿司', ratio: { "トラウトサーモン": 1, "マグロ": 1, "ヤリイカ": 1, "ボイルエビ": 1, "カレイ": 1, "ネギトロ": 1, "アナゴ": 1 } },
     { id: 'moriawase_10', name: '盛り合わせ10貫', ratio: { "赤いか": 1, "マグロ": 1, "生エビ": 1, "生サーモン": 1, "タイ": 1, "エンガワ": 1, "いたや貝": 1, "ネギトロ": 1, "ボイルエビ": 1, "アナゴ": 1 } },
     { id: 'chutoro_13', name: '中とろ入り13貫', ratio: { "マグロ": 1, "中トロ": 1, "タイ": 1, "生サーモン": 2, "生エビ": 1, "エンガワ": 1, "いくら": 0.5, "ウニ": 0.5, "ネギトロ": 1, "コウイカ": 1, "ボイルエビ": 1, "アナゴ": 1 } },
-    { id: 'kan_18', name: '18貫入り', ratio: { "トラウトサーモン": 2, "ズワイガニ": 2, "赤いか": 2, "生エビ": 2, "アナゴ": 2, "ネギトロ": 2, "ウニ": 2, "28カットたまご": 1 / 14 } }
+    { id: 'kan_18', name: '18貫入り', ratio: { "トラウトサーモン": 2, "ズワイガニ": 2, "赤いか": 2, "生エビ": 2, "アナゴ": 2, "ネギトロ": 2, "ウニ": 2, "28カットたまご": 1 / 14 } },
+    { id: 'baibai_maguro', name: '倍倍マグロ', ratio: { "マグロ": 16 } },
+    { id: 'baibai_salmon', name: '倍倍サーモン', ratio: { "生サーモン": 16 } },
+    { id: 'bai_maguro_salmon', name: '倍マグロサーモン', ratio: { "マグロ": 4, "生サーモン": 4 } },
+    { id: 'bai_salmon', name: '倍サーモン', ratio: { "生サーモン": 8 } },
+    { id: 'bai_maguro', name: '倍マグロ', ratio: { "マグロ": 8 } },
+    { id: 'unagi_kabayaki', name: 'うなぎかば焼き', ratio: { "うなぎ": 5 } },
+    { id: 'unagi_10', name: 'うなぎ10貫', ratio: { "うなぎ": 10 } }
 ];
 
 // --- 画面初期化（商品入力欄の生成） ---
@@ -140,7 +182,7 @@ function calculateTotal() {
     }
 }
 
-// 仕込み数を一括で在庫から引き算する機能
+// 仕込み数を一括で在庫から引き算する機能（スプレッドシート連動追加）
 function applyPrepToStock() {
     let appliedCount = 0;
     for (let name in lastCalculatedTotals) {
@@ -150,7 +192,8 @@ function applyPrepToStock() {
         }
     }
     if (appliedCount > 0) {
-        alert('仕込み分のネタ数を現在の在庫から引き算しました！\n「在庫管理」タブから確認できます。');
+        saveStockToSpreadsheet(); // 🖨️ スプレッドシートに保存
+        alert('仕込み分のネタ数を現在の在庫から引き算し、スプレッドシートを更新しました！\n「在庫管理」タブから確認できます。');
         resetForm();
     }
 }
@@ -184,7 +227,7 @@ function renderStockFields() {
     });
 }
 
-// 個別の在庫を足し算・引き算する機能
+// 個別の在庫を足し算・引き算する機能（スプレッドシート連動追加）
 function updateSingleStock(netaName, index) {
     const plusQty = parseFloat(document.getElementById(`stock-plus-${index}`).value) || 0;
     const minusQty = parseFloat(document.getElementById(`stock-minus-${index}`).value) || 0;
@@ -201,7 +244,8 @@ function updateSingleStock(netaName, index) {
     document.getElementById(`stock-plus-${index}`).value = '';
     document.getElementById(`stock-minus-${index}`).value = '';
     
-    alert(`${netaName} の在庫を更新しました！\n新しい在庫: ${stockMaster[netaName]}`);
+    saveStockToSpreadsheet(); // 🖨️ スプレッドシートに保存
+    alert(`${netaName} の在庫を更新し、スプレッドシートに同期しました！\n新しい在庫: ${stockMaster[netaName]}`);
 }
 
 // リセット処理
