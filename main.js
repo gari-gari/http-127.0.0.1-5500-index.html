@@ -75,14 +75,14 @@ async function loadStockFromSpreadsheet() {
         alert("🚨 スプレッドシートからの在庫同期に失敗しました。オフラインモード（初期値100）で起動します。\n理由: " + error.message);
     }
 }
-
-// --- スプレッドシートへ最新在庫を保存する関数 ---
+// --- スプレッドシートへ最新在庫を保存する関数（修正版） ---
 async function saveStockToSpreadsheet() {
     try {
+        // Google GASに確実にデータを届けるため、テキスト形式でラップして送信します
         const response = await fetch(GAS_API_URL, {
             method: "POST",
-            mode: "no-cors", 
-            headers: { "Content-Type": "application/json" },
+            /* mode: "no-cors" は削除するか、指定せずブラウザに任せます */
+            headers: { "Content-Type": "text/plain" }, 
             body: JSON.stringify(stockMaster)
         });
         console.log("スプレッドシートへ在庫データを送信しました");
