@@ -55,7 +55,7 @@ const packSizeMaster = {
 // 在庫データ（初期値は100ですが、スプレッドシートの通信が成功すると上書きされます）
 let stockMaster = {};
 netaMaster.forEach(neta => {
-    stockMaster[neta] = 100; 
+    stockMaster[neta] = 0; 
 });
 
 // --- スプレッドシートから在庫を取得する関数 ---
