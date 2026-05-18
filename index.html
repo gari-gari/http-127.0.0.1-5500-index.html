@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sushi Master Elite | 匠の仕込み・在庫管理</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="auth-screen" class="auth-full-screen">
+        <div class="auth-glass-card">
+            <div class="auth-header">
+                <span class="emblem">紋</span>
+                <h2>匠の統合管理</h2>
+                <p>PREP & INVENTORY</p>
+            </div>
+            <div class="auth-body">
+                <input type="password" id="password-input" placeholder="合言葉を入力" autofocus>
+                <button onclick="checkPassword()" class="btn-entry">御免</button>
+                <p id="auth-error" class="error-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="container hidden">
+        <header class="app-header">
+            <div class="brand">
+                <span class="brand-en">SUSHI MASTER ELITE</span>
+                <span class="brand-jp">匠の仕込み・在庫管理系統</span>
+            </div>
+            <div class="kaza-ana"></div>
+            
+            <div class="tab-menu">
+                <button id="tab-prep" class="tab-btn active" onclick="switchTab('prep')">仕込み計算</button>
+                <button id="tab-stock" class="tab-btn" onclick="switchTab('stock')">在庫管理</button>
+            </div>
+        </header>
+
+        <main>
+            <div id="content-prep" class="tab-content">
+                <section class="menu-section">
+                    <h3 class="section-label">献立注文数</h3>
+                    <div id="input-fields" class="input-grid"></div>
+                </section>
+
+                <div class="action-footer">
+                    <button type="button" class="btn-calc" onclick="calculateTotal()">計算を実行</button>
+                    <button type="button" class="btn-reset" onclick="resetForm()">リセット</button>
+                </div>
+
+                <section id="result-container" class="hidden">
+                    <div class="result-scroll">
+                        <h2 class="result-title">仕込み指示明細</h2>
+                        <div id="result-details"></div>
+                        <div class="summary-box">
+                            <span class="summary-label">総ネタ数</span>
+                            <span id="total-count" class="summary-value">0</span>
+                        </div>
+                        <button type="button" class="btn-stock-apply" onclick="applyPrepToStock()">
+                            この仕込み分を現在の在庫から引く ➔
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <div id="content-stock" class="tab-content hidden">
+                <section class="menu-section">
+                    <h3 class="section-label">現在のネタ在庫一覧</h3>
+                    <p class="stock-hint">※発注分は「＋」、ロスや直接出した分は「ー」に入力して確定を押してください。</p>
+                    <div id="stock-fields" class="input-grid"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

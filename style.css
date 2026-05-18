@@ -1,0 +1,178 @@
+/* --- デザイン定数 --- */
+:root {
+    --gold: #d4af37;
+    --gold-light: #f1e5ac;
+    --sumi: #1a1a1a;
+    --shu: #8e2323;
+    --midori: #1e5c3f; /* 在庫増加用の深緑 */
+    --washi: #fdfaf1;
+    --text: #2c3e50;
+}
+
+body {
+    font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif;
+    background: radial-gradient(circle at top, #ffffff, var(--washi));
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* --- 認証画面 --- */
+.auth-full-screen {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--sumi);
+    background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+}
+
+.auth-glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--gold);
+    padding: 50px 40px;
+    text-align: center;
+    width: 85%;
+    max-width: 380px;
+    border-radius: 2px;
+}
+
+.emblem {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 50%;
+    margin-bottom: 20px;
+}
+
+.auth-header h2 { color: white; letter-spacing: 5px; margin: 0; }
+.auth-header p { color: var(--gold); font-size: 0.7rem; letter-spacing: 3px; margin-bottom: 30px; }
+
+#password-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--gold);
+    color: white;
+    font-size: 1.2rem;
+    padding: 10px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.btn-entry {
+    background: var(--gold);
+    color: var(--sumi);
+    border: none;
+    padding: 12px 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-entry:hover { background: var(--gold-light); }
+.error-text { color: var(--shu); font-size: 0.85rem; margin-top: 15px; }
+
+/* --- メイン構成 --- */
+.container { max-width: 550px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+.app-header { text-align: center; padding: 30px 0 10px; }
+.brand-en { display: block; font-size: 0.8rem; letter-spacing: 5px; color: var(--gold); }
+.brand-jp { display: block; font-size: 1.6rem; font-weight: bold; letter-spacing: 2px; color: var(--sumi); }
+.kaza-ana { width: 30px; height: 1px; background: var(--gold); margin: 15px auto; }
+
+/* タブメニュー */
+.tab-menu { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+.tab-btn {
+    background: transparent;
+    border: 1px solid #ccc;
+    padding: 8px 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: 0.3s;
+    color: #666;
+}
+.tab-btn.active {
+    background: var(--sumi);
+    color: var(--gold);
+    border-color: var(--sumi);
+    font-weight: bold;
+}
+
+/* 入力行共通 */
+.input-row {
+    background: white;
+    margin-bottom: 10px;
+    padding: 15px 20px;
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    transition: 0.2s;
+}
+.input-row:hover { border-bottom-color: var(--gold); }
+.item-info label { font-weight: bold; font-size: 1.1rem; }
+.item-info span { font-size: 0.7rem; color: #999; display: block; }
+
+input[type="number"] {
+    width: 70px;
+    height: 40px;
+    font-size: 1.3rem;
+    border: 1px solid #ddd;
+    text-align: center;
+    background: var(--washi);
+    border-radius: 2px;
+}
+
+/* フッター（追従型） */
+.action-footer { display: flex; gap: 10px; margin: 30px 0; position: sticky; bottom: 20px; z-index: 10; }
+.btn-calc { flex: 2; background: var(--shu); color: white; height: 60px; font-size: 1.1rem; border: none; box-shadow: 0 5px 15px rgba(142, 35, 35, 0.3); font-weight: bold;}
+.btn-reset { flex: 1; background: var(--sumi); color: white; border: none; font-weight: bold;}
+
+/* 結果表示 */
+.result-scroll { background: white; border: 1px solid var(--gold); padding: 40px 30px; position: relative; }
+.result-title { text-align: center; font-size: 1.2rem; margin-bottom: 30px; color: var(--shu); border-bottom: 1px double var(--gold); padding-bottom: 10px; }
+.result-details p { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f9f9f9; margin: 0; }
+.pack-info { color: var(--shu); font-size: 0.8rem; font-weight: bold; margin-left: 10px; }
+.summary-box { margin: 30px 0 20px; background: var(--sumi); color: var(--gold); padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+.summary-value { font-size: 2rem; font-weight: bold; }
+
+/* 在庫反映ボタン */
+.btn-stock-apply {
+    width: 100%;
+    background: var(--midori);
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(30,92,63,0.2);
+    transition: 0.2s;
+}
+.btn-stock-apply:hover { opacity: 0.9; }
+
+/* --- 在庫管理固有のスタイル --- */
+.stock-hint { font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-top: -10px; margin-bottom: 20px; }
+.stock-status-box { text-align: right; }
+.current-stock-label { font-size: 0.8rem; color: #7f8c8d; }
+.current-stock-value { font-size: 1.4rem; font-weight: bold; color: var(--sumi); margin-left: 5px; }
+.stock-io-area { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.stock-io-area span { font-weight: bold; color: #999; }
+.input-stock-io { width: 55px !important; height: 35px !important; font-size: 1.1rem !important; }
+.btn-stock-submit { background: var(--sumi); color: var(--gold); border: 1px solid var(--gold); padding: 5px 10px; font-size: 0.85rem; cursor: pointer; height: 35px; font-weight: bold;}
+.btn-stock-submit:hover { background: var(--gold); color: var(--sumi); }
+
+.hidden { display: none !important; }
+
+@media (max-width: 480px) {
+    .brand-jp { font-size: 1.3rem; }
+    .input-row { padding: 12px 15px; }
+    .item-info label { font-size: 1rem; }
+}
