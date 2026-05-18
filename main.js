@@ -2,7 +2,7 @@
 const SECRET_WORD = "2026"; 
 
 // 🔗 【重要】Google Apps Scriptで発行されたウェブアプリURLをここに貼り付けてください
-const GAS_API_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxLRVOBrlnZgjrtYoKaRst8l1z0LVCPJKKDxiYBZBJxjKxKcp01af3xKXd3e4y5_gLk/exec"; 
 
 function checkPassword() {
     const input = document.getElementById('password-input').value;
@@ -57,7 +57,7 @@ netaMaster.forEach(neta => {
     stockMaster[neta] = 100; 
 });
 
-// --- 【新規】スプレッドシートから在庫を取得する関数 ---
+// --- スプレッドシートから在庫を取得する関数 ---
 async function loadStockFromSpreadsheet() {
     try {
         const response = await fetch(GAS_API_URL);
@@ -76,12 +76,12 @@ async function loadStockFromSpreadsheet() {
     }
 }
 
-// --- 【新規】スプレッドシートへ最新在庫を保存する関数 ---
+// --- スプレッドシートへ最新在庫を保存する関数 ---
 async function saveStockToSpreadsheet() {
     try {
         const response = await fetch(GAS_API_URL, {
             method: "POST",
-            mode: "no-cors", // GASの仕様に合わせたクロスドメイン対策
+            mode: "no-cors", 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(stockMaster)
         });
@@ -182,7 +182,7 @@ function calculateTotal() {
     }
 }
 
-// 仕込み数を一括で在庫から引き算する機能（スプレッドシート連動追加）
+// 仕込み数を一括で在庫から引き算する機能
 function applyPrepToStock() {
     let appliedCount = 0;
     for (let name in lastCalculatedTotals) {
@@ -192,13 +192,31 @@ function applyPrepToStock() {
         }
     }
     if (appliedCount > 0) {
-        saveStockToSpreadsheet(); // 🖨️ スプレッドシートに保存
+        saveStockToSpreadsheet(); 
         alert('仕込み分のネタ数を現在の在庫から引き算し、スプレッドシートを更新しました！\n「在庫管理」タブから確認できます。');
         resetForm();
     }
 }
 
-// 在庫管理画面の項目を自動生成・描写する機能
+// 🛠️【大幅修正】在庫数の表示を「端数なしの完全パック表記」のみに絞り込む関数
+function getStockDisplayText(name, totalQty) {
+    if (!packSizeMaster[name] || packSizeMaster[name] === 1) {
+        // パック容量の設定がない、または1枚/1パック（玉子やキュウリなど）はそのまま整数（バラ）で表示
+        return `${Math.round(totalQty)}`;
+    }
+    
+    // パック数に綺麗に換算（端数・余り枚数は完全に非表示）
+    const size = packSizeMaster[name];
+    const packs = Math.floor(totalQty / size);
+    
+    if (packs > 0) {
+        return `${packs} パック`;
+    } else {
+        return `0 パック`; // 1パックに満たない場合は0パックと表記
+    }
+}
+
+// 在庫管理画面の項目を自動生成・描写する機能（表示テキスト部分を修正）
 function renderStockFields() {
     const stockFields = document.getElementById('stock-fields');
     stockFields.innerHTML = ''; 
@@ -206,15 +224,19 @@ function renderStockFields() {
     netaMaster.forEach((name, index) => {
         const row = document.createElement('div');
         row.className = 'input-row';
+        
+        // パック数での表示テキストを取得
+        const displayStockText = getStockDisplayText(name, stockMaster[name]);
+        
         row.innerHTML = `
             <div class="item-info">
                 <label>${name}</label>
-                <span>${packSizeMaster[name] ? packSizeMaster[name] + '枚/1P' : 'バラ管理'}</span>
+                <span>${packSizeMaster[name] && packSizeMaster[name] > 1 ? packSizeMaster[name] + '枚/1P' : 'バラ管理'}</span>
             </div>
             <div class="stock-status-box">
                 <div>
                     <span class="current-stock-label">現在庫:</span>
-                    <span class="current-stock-value" id="stock-val-${index}">${stockMaster[name]}</span>
+                    <span class="current-stock-value" id="stock-val-${index}" style="font-size: 0.95em; font-weight: bold; color: #333;">${displayStockText}</span>
                 </div>
                 <div class="stock-io-area">
                     <span>＋</span><input type="number" id="stock-plus-${index}" class="input-stock-io" placeholder="0" min="0" inputmode="numeric">
@@ -227,25 +249,33 @@ function renderStockFields() {
     });
 }
 
-// 個別の在庫を足し算・引き算する機能（スプレッドシート連動追加）
+// 個別の在庫を足し算・引き算する機能（※入力エリアは「パック数」で計算するように進化）
 function updateSingleStock(netaName, index) {
-    const plusQty = parseFloat(document.getElementById(`stock-plus-${index}`).value) || 0;
-    const minusQty = parseFloat(document.getElementById(`stock-minus-${index}`).value) || 0;
+    const plusInput = parseFloat(document.getElementById(`stock-plus-${index}`).value) || 0;
+    const minusInput = parseFloat(document.getElementById(`stock-minus-${index}`).value) || 0;
 
-    if (plusQty === 0 && minusQty === 0) {
+    if (plusInput === 0 && minusInput === 0) {
         alert('数値を入力してください');
         return;
     }
 
+    // 1パックあたりの容量を取得（設定がなければ1枚換算）
+    const size = packSizeMaster[netaName] || 1;
+
+    // バイト仲間が直感的に打てるよう、入力数値を「パック数 × 1Pの枚数」に内部で自動変換して計算
+    const plusQty = plusInput * size;
+    const minusQty = minusInput * size;
+
     let newStock = stockMaster[netaName] + plusQty - minusQty;
     stockMaster[netaName] = Math.round(newStock * 1000) / 1000;
 
-    document.getElementById(`stock-val-${index}`).textContent = stockMaster[netaName];
+    // 描写テキストを更新
+    document.getElementById(`stock-val-${index}`).textContent = getStockDisplayText(netaName, stockMaster[netaName]);
     document.getElementById(`stock-plus-${index}`).value = '';
     document.getElementById(`stock-minus-${index}`).value = '';
     
-    saveStockToSpreadsheet(); // 🖨️ スプレッドシートに保存
-    alert(`${netaName} の在庫を更新し、スプレッドシートに同期しました！\n新しい在庫: ${stockMaster[netaName]}`);
+    saveStockToSpreadsheet(); 
+    alert(`${netaName} の在庫を更新し、スプレッドシートに同期しました！\n新しい在庫: ${getStockDisplayText(netaName, stockMaster[netaName])}`);
 }
 
 // リセット処理
